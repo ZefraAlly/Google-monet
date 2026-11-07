@@ -1,0 +1,22 @@
+name: Build FloatWeb jar
+on: workflow_dispatch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compile to jar
+        run: |
+          ANDROID_JAR=$(ls -d $ANDROID_HOME/platforms/android-*/android.jar | sort -V | tail -1)
+          D8=$(ls -d $ANDROID_HOME/build-tools/*/d8 | sort -V | tail -1)
+          mkdir -p out build
+          javac -source 8 -target 8 -Xlint:-options -cp "$ANDROID_JAR" -d out $(find . -name Main.java | head -n1)
+          "$D8" --lib "$ANDROID_JAR" --min-api 21 --output build $(find out -name '*.class')
+          cd build && zip FloatWeb.jar classes.dex
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: FloatWeb
+          path: build/FloatWeb.jar
